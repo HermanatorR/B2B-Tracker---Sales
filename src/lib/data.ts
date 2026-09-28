@@ -200,7 +200,7 @@ export function useCouponRecords(businessId: string) {
 
 /* --------------------------------- activity --------------------------------- */
 
-export function useActivity(opts: { userId?: string; limit?: number } = {}) {
+export function useActivity(opts: { userId?: string | undefined; limit?: number | undefined } = {}) {
   const { data: session } = useSession();
   return useQuery({
     queryKey: ["activity", session?.company?.id, opts.userId ?? "all", opts.limit ?? 30],
@@ -359,7 +359,7 @@ export function useRecordDistribution() {
   const { data: session } = useSession();
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (input: { business_id: string; quantity: number; distributed_on: string; note?: string }) => {
+    mutationFn: async (input: { business_id: string; quantity: number; distributed_on: string; note?: string | undefined }) => {
       if (!session?.company?.id) throw new Error("No company found for your account.");
       const { error } = await supabase.from("coupon_distributions").insert({
         ...input,
@@ -376,7 +376,7 @@ export function useRecordReturn() {
   const { data: session } = useSession();
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (input: { business_id: string; quantity: number; returned_on: string; note?: string }) => {
+    mutationFn: async (input: { business_id: string; quantity: number; returned_on: string; note?: string | undefined }) => {
       if (!session?.company?.id) throw new Error("No company found for your account.");
       const { error } = await supabase.from("coupon_returns").insert({
         ...input,

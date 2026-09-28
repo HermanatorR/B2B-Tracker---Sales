@@ -177,9 +177,18 @@ function AddEmployeeDialog() {
   const [saving, setSaving] = useState(false);
 
   async function submit() {
-    if (!fullName.trim()) return toast.error("Enter the employee's name.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return toast.error("Enter a valid email address.");
-    if (password.length < 8) return toast.error("The temporary password needs at least 8 characters.");
+    if (!fullName.trim()) {
+      toast.error("Enter the employee's name.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Enter a valid email address.");
+      return;
+    }
+    if (password.length < 8) {
+      toast.error("The temporary password needs at least 8 characters.");
+      return;
+    }
     setSaving(true);
     try {
       await add({ data: { full_name: fullName.trim(), email: email.trim(), role, password } });
