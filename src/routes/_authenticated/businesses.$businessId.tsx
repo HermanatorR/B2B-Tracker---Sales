@@ -119,7 +119,7 @@ function BusinessProfile() {
 
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Total distributed" value={m.totalDistributed} />
-        <StatCard label="Total returned" value={m.totalReturned} />
+        <StatCard label="Returned (used)" value={m.totalReturned} hint="Used coupons collected back" />
         <StatCard label="Return rate" value={percent(m.returnRate)} />
         <StatCard label="Turnover" value={m.turnoverLabel.split(" — ")[1] ?? "—"} hint={m.turnoverLabel} />
       </div>
@@ -136,7 +136,7 @@ function BusinessProfile() {
           <dl className="grid gap-x-6 gap-y-3 rounded-xl border border-border bg-card p-5 sm:grid-cols-2">
             <Row label="Current status" value={m.statusLabel} />
             <Row label="Estimated turnover" value={m.turnoverLabel} />
-            <Row label="Coupons still out" value={String(m.remaining)} />
+            <Row label="Coupons still out (distributed − returned)" value={String(m.remaining)} />
             <Row label="Estimated remaining" value={estimatedRemainingLabel(m)} />
             <Row label="Last visit" value={formatDate(m.lastVisit)} />
             <Row label="Last distribution" value={formatDate(m.lastDistribution)} />
@@ -159,9 +159,9 @@ function BusinessProfile() {
             <HistoryList
               rows={records.distributions.map((d) => ({
                 id: d.id,
-                date: d.distributed_on ?? d.created_at,
+                date: d.happened_on,
                 quantity: d.quantity,
-                who: records.nameFor(d.user_id),
+                who: d.recorded_by ?? "Another team member",
                 note: d.note,
               }))}
               unit="coupons distributed"
@@ -176,12 +176,12 @@ function BusinessProfile() {
             <HistoryList
               rows={records.returns.map((r) => ({
                 id: r.id,
-                date: r.returned_on ?? r.created_at,
+                date: r.happened_on,
                 quantity: r.quantity,
-                who: records.nameFor(r.user_id),
+                who: r.recorded_by ?? "Another team member",
                 note: r.note,
               }))}
-              unit="coupons returned"
+              unit="used coupons returned"
             />
           ) : (
             <EmptyState title="No returns recorded yet." />

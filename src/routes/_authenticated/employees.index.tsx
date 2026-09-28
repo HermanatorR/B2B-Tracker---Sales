@@ -25,7 +25,7 @@ import {
 import { EmptyState, PageHeader, SkeletonRows } from "@/components/ui-bits";
 import { createEmployee } from "@/lib/admin.functions";
 import { formatDateTime, percent } from "@/lib/coupon";
-import { useEmployees, useSession, useSetEmployeeRole, useUpdateProfile } from "@/lib/data";
+import { averageTurnover, turnoverText, useBusinesses, useEmployees, useSession, useSetEmployeeRole, useUpdateProfile } from "@/lib/data";
 
 export const Route = createFileRoute("/_authenticated/employees/")({
   head: () => ({
@@ -44,6 +44,7 @@ function EmployeesPage() {
   const { data: session, isPending: sessionPending } = useSession();
   const navigate = useNavigate();
   const { data: employees, isPending } = useEmployees();
+  const { data: businesses } = useBusinesses();
   const setRole = useSetEmployeeRole();
   const updateProfile = useUpdateProfile();
 
@@ -76,10 +77,11 @@ function EmployeesPage() {
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Businesses</th>
+                <th className="px-4 py-3 font-medium">Businesses visited</th>
                 <th className="px-4 py-3 font-medium">Distributed</th>
                 <th className="px-4 py-3 font-medium">Returned</th>
                 <th className="px-4 py-3 font-medium">Return rate</th>
+                <th className="px-4 py-3 font-medium">Avg turnover</th>
                 <th className="px-4 py-3 font-medium">Last activity</th>
                 <th className="px-4 py-3 font-medium">Status</th>
               </tr>
@@ -127,6 +129,7 @@ function EmployeesPage() {
                   <td className="px-4 py-3 tabular-nums">{e.distributed}</td>
                   <td className="px-4 py-3 tabular-nums">{e.returned}</td>
                   <td className="px-4 py-3 tabular-nums">{percent(e.returnRate)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{turnoverText(averageTurnover(businesses ?? [], e.visitedBusinessIds))}</td>
                   <td className="px-4 py-3 text-muted-foreground">{formatDateTime(e.lastActivity)}</td>
                   <td className="px-4 py-3">
                     {e.id === session.userId ? (

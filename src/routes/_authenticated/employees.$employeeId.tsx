@@ -5,7 +5,7 @@ import { lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader, SkeletonRows, StatCard, StatusBadge } from "@/components/ui-bits";
 import { activityLabel, formatDateTime, percent } from "@/lib/coupon";
-import { useActivity, useBusinesses, useCompanyRecords, useEmployees, useSession } from "@/lib/data";
+import { averageTurnover, turnoverText, useActivity, useBusinesses, useEmployees, useSession } from "@/lib/data";
 
 const BusinessMap = lazy(() => import("@/components/business-map"));
 
@@ -27,7 +27,6 @@ function EmployeeDetail() {
   const { data: session } = useSession();
   const { data: employees, isPending } = useEmployees();
   const { data: businesses } = useBusinesses();
-  const { data: records } = useCompanyRecords();
   const { data: activity } = useActivity({ userId: employeeId, limit: 20 });
 
   if (session && session.role !== "admin") {
@@ -59,7 +58,7 @@ function EmployeeDetail() {
     );
   }
 
-  const visitedIds = new Set((records?.distributions ?? []).filter((d) => d.user_id === employeeId).map((d) => d.business_id));
+  const visitedIds = new Set(employee.visitedBusinessIds);
   const visited = (businesses ?? []).filter((b) => visitedIds.has(b.id));
   const managed = (businesses ?? []).filter((b) => b.assigned_to === employeeId);
   const mapped = visited.filter((b) => b.latitude !== null && b.longitude !== null);
@@ -80,12 +79,14 @@ function EmployeeDetail() {
         }`}
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Businesses visited" value={visited.length} />
         <StatCard label="Businesses managed" value={managed.length} />
         <StatCard label="Coupons distributed" value={employee.distributed} />
-        <StatCard label="Coupons returned" value={employee.returned} />
+        <StatCard label="Coupons returned (used)" value={employee.returned} />
         <StatCard label="Return rate" value={percent(employee.returnRate)} />
+        <StatCard label="Avg turnover" value={turnoverText(averageTurnover(businesses ?? [], employee.visitedBusinessIds))} />
+        <StatCard label="Last activity" value={employee.lastActivity ? formatDateTime(employee.lastActivity) : "None yet"} />
       </div>
 
       <section className="mt-8">
