@@ -19,6 +19,8 @@ import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/ma
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedBusinessesIndexRouteImport } from './routes/_authenticated/businesses.index'
 import { Route as AuthenticatedBusinessesBusinessIdRouteImport } from './routes/_authenticated/businesses.$businessId'
+import { Route as AuthenticatedEmployeesIndexRouteImport } from './routes/_authenticated/employees.index'
+import { Route as AuthenticatedEmployeesEmployeeIdRouteImport } from './routes/_authenticated/employees.$employeeId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -71,6 +73,18 @@ const AuthenticatedBusinessesBusinessIdRoute =
     path: '/businesses/$businessId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEmployeesIndexRoute =
+  AuthenticatedEmployeesIndexRouteImport.update({
+    id: '/employees/',
+    path: '/employees/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEmployeesEmployeeIdRoute =
+  AuthenticatedEmployeesEmployeeIdRouteImport.update({
+    id: '/employees/$employeeId',
+    path: '/employees/$employeeId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,7 +95,9 @@ export interface FileRoutesByFullPath {
   '/map': typeof AuthenticatedMapRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/businesses/$businessId': typeof AuthenticatedBusinessesBusinessIdRoute
+  '/employees/$employeeId': typeof AuthenticatedEmployeesEmployeeIdRoute
   '/businesses/': typeof AuthenticatedBusinessesIndexRoute
+  '/employees/': typeof AuthenticatedEmployeesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -92,7 +108,9 @@ export interface FileRoutesByTo {
   '/map': typeof AuthenticatedMapRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/businesses/$businessId': typeof AuthenticatedBusinessesBusinessIdRoute
+  '/employees/$employeeId': typeof AuthenticatedEmployeesEmployeeIdRoute
   '/businesses': typeof AuthenticatedBusinessesIndexRoute
+  '/employees': typeof AuthenticatedEmployeesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -105,7 +123,9 @@ export interface FileRoutesById {
   '/_authenticated/map': typeof AuthenticatedMapRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/businesses/$businessId': typeof AuthenticatedBusinessesBusinessIdRoute
+  '/_authenticated/employees/$employeeId': typeof AuthenticatedEmployeesEmployeeIdRoute
   '/_authenticated/businesses/': typeof AuthenticatedBusinessesIndexRoute
+  '/_authenticated/employees/': typeof AuthenticatedEmployeesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,7 +138,9 @@ export interface FileRouteTypes {
     | '/map'
     | '/profile'
     | '/businesses/$businessId'
+    | '/employees/$employeeId'
     | '/businesses/'
+    | '/employees/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,7 +151,9 @@ export interface FileRouteTypes {
     | '/map'
     | '/profile'
     | '/businesses/$businessId'
+    | '/employees/$employeeId'
     | '/businesses'
+    | '/employees'
   id:
     | '__root__'
     | '/'
@@ -141,7 +165,9 @@ export interface FileRouteTypes {
     | '/_authenticated/map'
     | '/_authenticated/profile'
     | '/_authenticated/businesses/$businessId'
+    | '/_authenticated/employees/$employeeId'
     | '/_authenticated/businesses/'
+    | '/_authenticated/employees/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +249,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBusinessesBusinessIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/employees/': {
+      id: '/_authenticated/employees/'
+      path: '/employees'
+      fullPath: '/employees/'
+      preLoaderRoute: typeof AuthenticatedEmployeesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/employees/$employeeId': {
+      id: '/_authenticated/employees/$employeeId'
+      path: '/employees/$employeeId'
+      fullPath: '/employees/$employeeId'
+      preLoaderRoute: typeof AuthenticatedEmployeesEmployeeIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -232,7 +272,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedBusinessesBusinessIdRoute: typeof AuthenticatedBusinessesBusinessIdRoute
+  AuthenticatedEmployeesEmployeeIdRoute: typeof AuthenticatedEmployeesEmployeeIdRoute
   AuthenticatedBusinessesIndexRoute: typeof AuthenticatedBusinessesIndexRoute
+  AuthenticatedEmployeesIndexRoute: typeof AuthenticatedEmployeesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -242,7 +284,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedBusinessesBusinessIdRoute:
     AuthenticatedBusinessesBusinessIdRoute,
+  AuthenticatedEmployeesEmployeeIdRoute: AuthenticatedEmployeesEmployeeIdRoute,
   AuthenticatedBusinessesIndexRoute: AuthenticatedBusinessesIndexRoute,
+  AuthenticatedEmployeesIndexRoute: AuthenticatedEmployeesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
