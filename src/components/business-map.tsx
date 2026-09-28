@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+
+import { RecordCouponsDialog } from "@/components/record-coupons";
 import L from "leaflet";
 import { Crosshair } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
@@ -118,13 +120,33 @@ export default function BusinessMap({
                   <br />
                   Last return: {formatDate(b.metrics.lastReturn)}
                 </p>
-                <Link
-                  to="/businesses/$businessId"
-                  params={{ businessId: b.id }}
-                  className="mt-1 inline-flex rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground"
-                >
-                  View business
-                </Link>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <Link
+                    to="/businesses/$businessId"
+                    params={{ businessId: b.id }}
+                    className="inline-flex rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground"
+                  >
+                    View business
+                  </Link>
+                  <RecordCouponsDialog
+                    mode="distribution"
+                    business={b}
+                    trigger={
+                      <button type="button" className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium">
+                        Record distribution
+                      </button>
+                    }
+                  />
+                  <RecordCouponsDialog
+                    mode="return"
+                    business={b}
+                    trigger={
+                      <button type="button" className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium">
+                        Record return
+                      </button>
+                    }
+                  />
+                </div>
               </div>
             </Popup>
           </Marker>
