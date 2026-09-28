@@ -15,6 +15,13 @@
       "when": 1790563997270,
       "tag": "0001_add_first_distribution_to_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790568288574,
+      "tag": "0002_harden_tenancy_and_validation",
+      "breakpoints": true
     }
   ]
 }
