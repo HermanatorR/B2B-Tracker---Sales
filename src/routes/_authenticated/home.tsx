@@ -153,13 +153,8 @@ function RepHome() {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Businesses" value={scope.length} icon={Building2} large />
         <StatCard label="Coupons distributed" value={distributed} icon={Ticket} large />
-        <StatCard label="Coupons returned" value={returned} icon={Undo2} large />
-        <StatCard
-          label="Return rate"
-          value={distributed > 0 ? percent((returned / distributed) * 100) : "—"}
-          icon={TrendingUp}
-          large
-        />
+        <StatCard label="Coupons returned (used)" value={returned} icon={Undo2} large />
+        <StatCard label="Needs attention" value={attention.length} icon={TrendingUp} large />
       </div>
 
       <section className="mt-8">
@@ -270,7 +265,7 @@ function AdminDashboard() {
         <StatCard label="Needs attention" value={attention.length} />
         <StatCard label="Average turnover" value={avgTurnover} icon={TrendingUp} />
         <StatCard label="Coupons distributed" value={distributed} icon={Ticket} />
-        <StatCard label="Coupons returned" value={returned} icon={Undo2} />
+        <StatCard label="Coupons returned (used)" value={returned} icon={Undo2} />
         <StatCard
           label="Overall return rate"
           value={distributed > 0 ? percent((returned / distributed) * 100) : "—"}
