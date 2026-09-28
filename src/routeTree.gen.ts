@@ -14,6 +14,9 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
+import { Route as AuthenticatedBusinessesIndexRouteImport } from './routes/_authenticated/businesses.index'
+import { Route as AuthenticatedBusinessesBusinessIdRouteImport } from './routes/_authenticated/businesses.$businessId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,18 +42,41 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBusinessesIndexRoute =
+  AuthenticatedBusinessesIndexRouteImport.update({
+    id: '/businesses/',
+    path: '/businesses/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBusinessesBusinessIdRoute =
+  AuthenticatedBusinessesBusinessIdRouteImport.update({
+    id: '/businesses/$businessId',
+    path: '/businesses/$businessId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/map': typeof AuthenticatedMapRoute
+  '/businesses/$businessId': typeof AuthenticatedBusinessesBusinessIdRoute
+  '/businesses/': typeof AuthenticatedBusinessesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/map': typeof AuthenticatedMapRoute
+  '/businesses/$businessId': typeof AuthenticatedBusinessesBusinessIdRoute
+  '/businesses': typeof AuthenticatedBusinessesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +85,29 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/map': typeof AuthenticatedMapRoute
+  '/_authenticated/businesses/$businessId': typeof AuthenticatedBusinessesBusinessIdRoute
+  '/_authenticated/businesses/': typeof AuthenticatedBusinessesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/reset-password' | '/home'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/home'
+    | '/map'
+    | '/businesses/$businessId'
+    | '/businesses/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/reset-password' | '/home'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/home'
+    | '/map'
+    | '/businesses/$businessId'
+    | '/businesses'
   id:
     | '__root__'
     | '/'
@@ -72,6 +115,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/_authenticated/home'
+    | '/_authenticated/map'
+    | '/_authenticated/businesses/$businessId'
+    | '/_authenticated/businesses/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,15 +164,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/map': {
+      id: '/_authenticated/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof AuthenticatedMapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/businesses/': {
+      id: '/_authenticated/businesses/'
+      path: '/businesses'
+      fullPath: '/businesses/'
+      preLoaderRoute: typeof AuthenticatedBusinessesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/businesses/$businessId': {
+      id: '/_authenticated/businesses/$businessId'
+      path: '/businesses/$businessId'
+      fullPath: '/businesses/$businessId'
+      preLoaderRoute: typeof AuthenticatedBusinessesBusinessIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedMapRoute: typeof AuthenticatedMapRoute
+  AuthenticatedBusinessesBusinessIdRoute: typeof AuthenticatedBusinessesBusinessIdRoute
+  AuthenticatedBusinessesIndexRoute: typeof AuthenticatedBusinessesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedMapRoute: AuthenticatedMapRoute,
+  AuthenticatedBusinessesBusinessIdRoute:
+    AuthenticatedBusinessesBusinessIdRoute,
+  AuthenticatedBusinessesIndexRoute: AuthenticatedBusinessesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
