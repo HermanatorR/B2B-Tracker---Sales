@@ -76,6 +76,10 @@ function friendly(error: { message?: string } | null, fallback: string): string 
     return "You don't have permission to do that.";
   if (m.includes("failed to fetch") || m.includes("network"))
     return "Network problem — check your connection and try again.";
+  if (
+    /cannot exceed|must be a positive|invalid date|invalid email|same company|belong to your company|required|cannot be changed|only admins/.test(m)
+  )
+    return error.message.charAt(0).toUpperCase() + error.message.slice(1) + ".";
   return fallback;
 }
 
