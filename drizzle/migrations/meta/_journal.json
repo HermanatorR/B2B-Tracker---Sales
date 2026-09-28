@@ -22,6 +22,13 @@
       "when": 1790568288574,
       "tag": "0002_harden_tenancy_and_validation",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790570188865,
+      "tag": "0003_restrict_coupon_records_to_owner_or_admin",
+      "breakpoints": true
     }
   ]
 }

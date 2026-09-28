@@ -447,6 +447,32 @@ export type Database = {
         Args: { _company_name: string; _full_name: string }
         Returns: string
       }
+      business_history: {
+        Args: { _business_id: string }
+        Returns: {
+          created_at: string
+          happened_on: string
+          id: string
+          kind: string
+          note: string
+          quantity: number
+          recorded_by: string
+          user_id: string
+        }[]
+      }
+      company_business_stats: {
+        Args: never
+        Returns: {
+          business_id: string
+          distribution_count: number
+          first_distribution: string
+          last_distribution: string
+          last_return: string
+          return_count: number
+          total_distributed: number
+          total_returned: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
