@@ -127,11 +127,30 @@ export function BusinessFormDialog({
     if (form.contact_email && !EMAIL_RE.test(form.contact_email))
       return setError("That email address doesn't look right.");
 
-    const lat = form.latitude ? Number(form.latitude) : null;
-    const lng = form.longitude ? Number(form.longitude) : null;
+    let lat = form.latitude ? Number(form.latitude) : null;
+    let lng = form.longitude ? Number(form.longitude) : null;
     if (lat !== null && (Number.isNaN(lat) || lat < -90 || lat > 90)) return setError("Latitude must be between -90 and 90.");
     if (lng !== null && (Number.isNaN(lng) || lng < -180 || lng > 180))
       return setError("Longitude must be between -180 and 180.");
+
+    // Place the map pin automatically from the address when none is set yet.
+    if (lat === null || lng === null) {
+      const query = [form.address, form.city, form.province, form.postal_code].filter(Boolean).join(", ");
+      setGeoBusy(true);
+      try {
+        const result = await geocodeAddress({ data: { address: query } });
+        if (result.found) {
+          lat = result.latitude;
+          lng = result.longitude;
+          set("latitude", String(result.latitude));
+          set("longitude", String(result.longitude));
+        }
+      } catch {
+        // Saving without a pin is fine; the address can be looked up later.
+      } finally {
+        setGeoBusy(false);
+      }
+    }
 
     if (!editing) {
       const duplicate = (businesses ?? []).some(
