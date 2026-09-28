@@ -200,7 +200,7 @@ export function useCouponRecords(businessId: string) {
 
 /* --------------------------------- activity --------------------------------- */
 
-export function useActivity(opts: { userId?: string; limit?: number } = {}) {
+export function useActivity(opts: { userId?: string | undefined; limit?: number | undefined } = {}) {
   const { data: session } = useSession();
   return useQuery({
     queryKey: ["activity", session?.company?.id, opts.userId ?? "all", opts.limit ?? 30],
@@ -218,6 +218,40 @@ export function useActivity(opts: { userId?: string; limit?: number } = {}) {
     },
   });
 }
+
+/** All distributions and returns for the company, for reporting. */
+export function useCompanyRecords() {
+  const { data: session } = useSession();
+  return useQuery({
+    queryKey: ["company-records", session?.company?.id],
+    enabled: Boolean(session?.company?.id),
+    queryFn: async () => {
+      const [{ data: dist, error }, { data: rets }] = await Promise.all([
+        supabase.from("coupon_distributions").select("id, business_id, user_id, quantity, distributed_on"),
+        supabase.from("coupon_returns").select("id, business_id, user_id, quantity, returned_on"),
+      ]);
+      if (error) throw new Error(friendly(error, "Could not load coupon history."));
+      return {
+        distributions: (dist ?? []).map((d) => ({
+          id: d.id as string,
+          business_id: d.business_id as string,
+          user_id: d.user_id as string,
+          quantity: d.quantity as number,
+          date: d.distributed_on as string,
+        })),
+        returns: (rets ?? []).map((r) => ({
+          id: r.id as string,
+          business_id: r.business_id as string,
+          user_id: r.user_id as string,
+          quantity: r.quantity as number,
+          date: r.returned_on as string,
+        })),
+      };
+    },
+  });
+}
+
+
 
 /* --------------------------------- employees -------------------------------- */
 
@@ -325,10 +359,11 @@ export function useRecordDistribution() {
   const { data: session } = useSession();
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (input: { business_id: string; quantity: number; distributed_on: string; note?: string }) => {
+    mutationFn: async (input: { business_id: string; quantity: number; distributed_on: string; note?: string | undefined }) => {
       if (!session?.company?.id) throw new Error("No company found for your account.");
       const { error } = await supabase.from("coupon_distributions").insert({
         ...input,
+        note: input.note ?? null,
         company_id: session.company.id,
         user_id: session.userId,
       });
@@ -342,10 +377,11 @@ export function useRecordReturn() {
   const { data: session } = useSession();
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (input: { business_id: string; quantity: number; returned_on: string; note?: string }) => {
+    mutationFn: async (input: { business_id: string; quantity: number; returned_on: string; note?: string | undefined }) => {
       if (!session?.company?.id) throw new Error("No company found for your account.");
       const { error } = await supabase.from("coupon_returns").insert({
         ...input,
+        note: input.note ?? null,
         company_id: session.company.id,
         user_id: session.userId,
       });
