@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /** Geocode a free-form address with OpenStreetMap Nominatim (no API key). */
 export const geocodeAddress = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ address: z.string().min(3) }).parse(input))
   .handler(async ({ data }) => {
     try {

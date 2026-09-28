@@ -151,7 +151,7 @@ export function useBusinesses() {
     queryFn: async (): Promise<BusinessWithMetrics[]> => {
       const [{ data: businesses, error }, { data: stats }, { data: profiles }] = await Promise.all([
         supabase.from("businesses").select("*").order("name"),
-        supabase.from("business_stats").select("*"),
+        supabase.rpc("company_business_stats"),
         supabase.from("profiles").select("id, full_name"),
       ]);
       if (error) throw new Error(friendly(error, "Could not load businesses."));
@@ -174,29 +174,29 @@ export function useBusiness(id: string) {
   };
 }
 
+export type HistoryRow = {
+  id: string;
+  kind: "distribution" | "return";
+  quantity: number;
+  happened_on: string;
+  note: string | null;
+  created_at: string;
+  user_id: string | null;
+  recorded_by: string | null;
+};
+
+/** Shared coupon history for one business. Names are only shown for your own entries (or to admins). */
 export function useCouponRecords(businessId: string) {
   return useQuery({
     queryKey: ["coupon-records", businessId],
     enabled: Boolean(businessId),
     queryFn: async () => {
-      const [{ data: distributions }, { data: returns }, { data: profiles }] = await Promise.all([
-        supabase
-          .from("coupon_distributions")
-          .select("*")
-          .eq("business_id", businessId)
-          .order("distributed_on", { ascending: false }),
-        supabase
-          .from("coupon_returns")
-          .select("*")
-          .eq("business_id", businessId)
-          .order("returned_on", { ascending: false }),
-        supabase.from("profiles").select("id, full_name"),
-      ]);
-      const nameMap = new Map((profiles ?? []).map((p) => [p.id as string, p.full_name as string]));
+      const { data, error } = await supabase.rpc("business_history", { _business_id: businessId });
+      if (error) throw new Error(friendly(error, "Could not load coupon history."));
+      const rows = (data ?? []) as HistoryRow[];
       return {
-        distributions: (distributions ?? []) as CouponRecord[],
-        returns: (returns ?? []) as CouponRecord[],
-        nameFor: (id: string) => nameMap.get(id) ?? "Unknown",
+        distributions: rows.filter((r) => r.kind === "distribution"),
+        returns: rows.filter((r) => r.kind === "return"),
       };
     },
   });
@@ -262,6 +262,7 @@ export function useCompanyRecords() {
 export type Employee = Profile & {
   role: "admin" | "sales_rep" | null;
   businessCount: number;
+  visitedBusinessIds: string[];
   distributed: number;
   returned: number;
   returnRate: number | null;
@@ -279,7 +280,7 @@ export function useEmployees() {
           supabase.from("profiles").select("*").order("full_name"),
           supabase.from("user_roles").select("user_id, role"),
           supabase.from("coupon_distributions").select("user_id, quantity, business_id"),
-          supabase.from("coupon_returns").select("user_id, quantity"),
+          supabase.from("coupon_returns").select("user_id, quantity, business_id"),
           supabase.from("activity_logs").select("user_id, created_at").order("created_at", { ascending: false }),
           supabase.from("businesses").select("id, assigned_to"),
         ]);
@@ -294,15 +295,17 @@ export function useEmployees() {
       return (profiles ?? []).map((p) => {
         const userDist = (dist ?? []).filter((d) => d.user_id === p.id);
         const distributed = userDist.reduce((s, d) => s + (d.quantity as number), 0);
-        const returned = (rets ?? [])
-          .filter((r) => r.user_id === p.id)
-          .reduce((s, r) => s + (r.quantity as number), 0);
-        const visited = new Set(userDist.map((d) => d.business_id as string));
-        const assigned = (businesses ?? []).filter((b) => b.assigned_to === p.id).length;
+        const userRets = (rets ?? []).filter((r) => r.user_id === p.id);
+        const returned = userRets.reduce((s, r) => s + (r.quantity as number), 0);
+        const visited = new Set([
+          ...userDist.map((d) => d.business_id as string),
+          ...userRets.map((r) => r.business_id as string),
+        ]);
         return {
           ...(p as Profile),
           role: roleMap.get(p.id as string) ?? null,
-          businessCount: Math.max(visited.size, assigned),
+          businessCount: visited.size,
+          visitedBusinessIds: [...visited],
           distributed,
           returned,
           returnRate: distributed > 0 ? (returned / distributed) * 100 : null,
@@ -311,6 +314,21 @@ export function useEmployees() {
       });
     },
   });
+}
+
+/** Average turnover (days) across the given businesses that have enough data; null if none do. */
+export function averageTurnover(businesses: BusinessWithMetrics[], ids: string[]): number | null {
+  const set = new Set(ids);
+  const days = businesses
+    .filter((b) => set.has(b.id) && b.metrics.turnoverDays !== null)
+    .map((b) => b.metrics.turnoverDays as number);
+  return days.length ? days.reduce((a, b) => a + b, 0) / days.length : null;
+}
+
+export function turnoverText(days: number | null): string {
+  if (days === null) return "Not enough data";
+  const d = Math.max(1, Math.round(days));
+  return `~${d} day${d === 1 ? "" : "s"}`;
 }
 
 /* --------------------------------- mutations -------------------------------- */
@@ -322,6 +340,7 @@ function useInvalidateAll() {
     qc.invalidateQueries({ queryKey: ["activity"] });
     qc.invalidateQueries({ queryKey: ["employees"] });
     qc.invalidateQueries({ queryKey: ["coupon-records"] });
+    qc.invalidateQueries({ queryKey: ["company-records"] });
   };
 }
 
@@ -467,15 +486,18 @@ export function useRealtimeSync() {
       .on("postgres_changes", { event: "*", schema: "public", table: "coupon_distributions" }, () => {
         qc.invalidateQueries({ queryKey: ["businesses"] });
         qc.invalidateQueries({ queryKey: ["coupon-records"] });
+        qc.invalidateQueries({ queryKey: ["company-records"] });
         qc.invalidateQueries({ queryKey: ["employees"] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "coupon_returns" }, () => {
         qc.invalidateQueries({ queryKey: ["businesses"] });
         qc.invalidateQueries({ queryKey: ["coupon-records"] });
+        qc.invalidateQueries({ queryKey: ["company-records"] });
         qc.invalidateQueries({ queryKey: ["employees"] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
         qc.invalidateQueries({ queryKey: ["activity"] });
+        qc.invalidateQueries({ queryKey: ["employees"] });
       })
       .subscribe();
     return () => {
