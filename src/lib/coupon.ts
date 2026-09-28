@@ -97,7 +97,7 @@ export function computeMetrics(stats: RawStats | undefined, t: Thresholds): Busi
     else if (turnoverDays <= t.medium_turnover_days) turnoverTier = "medium";
     else turnoverTier = "low";
     const word = turnoverTier === "high" ? "High" : turnoverTier === "medium" ? "Medium" : "Low";
-    turnoverLabel = `${word} turnover — ~${rounded} days`;
+    turnoverLabel = `${word} turnover — ~${rounded} ${rounded === 1 ? "day" : "days"}`;
   }
 
   let status: CouponStatus;
