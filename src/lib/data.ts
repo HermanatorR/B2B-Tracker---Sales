@@ -219,6 +219,40 @@ export function useActivity(opts: { userId?: string; limit?: number } = {}) {
   });
 }
 
+/** All distributions and returns for the company, for reporting. */
+export function useCompanyRecords() {
+  const { data: session } = useSession();
+  return useQuery({
+    queryKey: ["company-records", session?.company?.id],
+    enabled: Boolean(session?.company?.id),
+    queryFn: async () => {
+      const [{ data: dist, error }, { data: rets }] = await Promise.all([
+        supabase.from("coupon_distributions").select("id, business_id, user_id, quantity, distributed_on"),
+        supabase.from("coupon_returns").select("id, business_id, user_id, quantity, returned_on"),
+      ]);
+      if (error) throw new Error(friendly(error, "Could not load coupon history."));
+      return {
+        distributions: (dist ?? []).map((d) => ({
+          id: d.id as string,
+          business_id: d.business_id as string,
+          user_id: d.user_id as string,
+          quantity: d.quantity as number,
+          date: d.distributed_on as string,
+        })),
+        returns: (rets ?? []).map((r) => ({
+          id: r.id as string,
+          business_id: r.business_id as string,
+          user_id: r.user_id as string,
+          quantity: r.quantity as number,
+          date: r.returned_on as string,
+        })),
+      };
+    },
+  });
+}
+
+
+
 /* --------------------------------- employees -------------------------------- */
 
 export type Employee = Profile & {
