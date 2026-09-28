@@ -424,9 +424,9 @@ export type Database = {
           business_id: string | null
           company_id: string | null
           distribution_count: number | null
+          first_distribution: string | null
           last_distribution: string | null
           last_return: string | null
-          last_visit: string | null
           return_count: number | null
           total_distributed: number | null
           total_returned: number | null
