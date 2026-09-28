@@ -237,7 +237,10 @@ function AdminDashboard() {
   const attention = needsAttention(list);
   const turnovers = list.map((b) => b.metrics.turnoverDays).filter((v): v is number => v !== null);
   const avgTurnover = turnovers.length
-    ? `~${Math.round(turnovers.reduce((s, v) => s + v, 0) / turnovers.length)} days`
+    ? (() => {
+        const d = Math.round(turnovers.reduce((s, v) => s + v, 0) / turnovers.length);
+        return `~${d} ${d === 1 ? "day" : "days"}`;
+      })()
     : "Not enough data";
   const nameFor = (id: string) => employees?.find((e) => e.id === id)?.full_name ?? "Someone";
 
@@ -281,7 +284,7 @@ function AdminDashboard() {
                 <li key={a.id} className="flex items-start justify-between gap-3 p-3.5">
                   <p className="text-sm">
                     <span className="font-medium">{nameFor(a.user_id)}</span>{" "}
-                    {activityLabel(a.action, a.quantity, a.business_name).toLowerCase()}
+                    {lowerFirst(activityLabel(a.action, a.quantity, a.business_name))}
                   </p>
                   <span className="shrink-0 text-xs text-muted-foreground">
                     {formatDateTime(a.created_at)}
