@@ -76,9 +76,7 @@ function Landing() {
               <Link to="/auth">Get started</Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link to="/auth" search={{ mode: "signin" } as never}>
-                I already have an account
-              </Link>
+              <Link to="/auth">I already have an account</Link>
             </Button>
           </div>
         </section>
