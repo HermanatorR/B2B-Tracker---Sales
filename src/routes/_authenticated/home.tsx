@@ -31,6 +31,9 @@ import {
   type BusinessWithMetrics,
 } from "@/lib/data";
 
+// "Distributed 40 coupons to Corner Cafe" -> "distributed 40 coupons to Corner Cafe"
+const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
     meta: [
