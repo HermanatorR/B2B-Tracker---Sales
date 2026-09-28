@@ -69,7 +69,10 @@ function ReportsPage() {
 
   const turnovers = (businesses ?? []).map((b) => b.metrics.turnoverDays).filter((v): v is number => v !== null);
   const avgTurnover = turnovers.length
-    ? `~${Math.round(turnovers.reduce((s, v) => s + v, 0) / turnovers.length)} days`
+    ? (() => {
+        const d = Math.round(turnovers.reduce((s, v) => s + v, 0) / turnovers.length);
+        return `~${d} ${d === 1 ? "day" : "days"}`;
+      })()
     : "Not enough data";
 
   const weeks = useMemo(() => {

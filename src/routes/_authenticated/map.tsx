@@ -99,8 +99,9 @@ function MapPage() {
 
       {withoutPins > 0 ? (
         <p className="mt-3 text-xs text-muted-foreground">
-          {withoutPins} business{withoutPins === 1 ? "" : "es"} have no map coordinates yet — open the
-          business and use “Find from address”.
+          {withoutPins === 1
+            ? "1 business has no map pin yet — open it and use “Find from address”."
+            : `${withoutPins} businesses have no map pin yet — open each one and use “Find from address”.`}
         </p>
       ) : null}
     </div>
