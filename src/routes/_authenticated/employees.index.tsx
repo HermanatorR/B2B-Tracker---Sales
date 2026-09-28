@@ -25,7 +25,7 @@ import {
 import { EmptyState, PageHeader, SkeletonRows } from "@/components/ui-bits";
 import { createEmployee } from "@/lib/admin.functions";
 import { formatDateTime, percent } from "@/lib/coupon";
-import { useEmployees, useSession, useSetEmployeeRole, useUpdateProfile } from "@/lib/data";
+import { averageTurnover, turnoverText, useBusinesses, useEmployees, useSession, useSetEmployeeRole, useUpdateProfile } from "@/lib/data";
 
 export const Route = createFileRoute("/_authenticated/employees/")({
   head: () => ({
@@ -44,6 +44,7 @@ function EmployeesPage() {
   const { data: session, isPending: sessionPending } = useSession();
   const navigate = useNavigate();
   const { data: employees, isPending } = useEmployees();
+  const { data: businesses } = useBusinesses();
   const setRole = useSetEmployeeRole();
   const updateProfile = useUpdateProfile();
 
