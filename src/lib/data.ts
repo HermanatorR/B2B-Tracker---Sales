@@ -363,6 +363,7 @@ export function useRecordDistribution() {
       if (!session?.company?.id) throw new Error("No company found for your account.");
       const { error } = await supabase.from("coupon_distributions").insert({
         ...input,
+        note: input.note ?? null,
         company_id: session.company.id,
         user_id: session.userId,
       });
@@ -380,6 +381,7 @@ export function useRecordReturn() {
       if (!session?.company?.id) throw new Error("No company found for your account.");
       const { error } = await supabase.from("coupon_returns").insert({
         ...input,
+        note: input.note ?? null,
         company_id: session.company.id,
         user_id: session.userId,
       });
