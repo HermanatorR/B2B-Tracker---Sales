@@ -72,10 +72,15 @@ function AuthPage() {
           },
         });
         if (err) {
+          const msg = err.message.toLowerCase();
           setError(
-            err.message.toLowerCase().includes("already")
+            msg.includes("already")
               ? "There's already an account with that email. Try signing in."
-              : "We couldn't create that account. Please try again.",
+              : msg.includes("weak") || msg.includes("pwned")
+                ? "That password has appeared in known data breaches. Please choose a different one."
+                : msg.includes("invalid") && msg.includes("email")
+                  ? "That email address doesn't look valid."
+                  : "We couldn't create that account. Please try again.",
           );
           return;
         }
