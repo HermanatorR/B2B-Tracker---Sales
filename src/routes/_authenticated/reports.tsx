@@ -167,7 +167,7 @@ function ReportsPage() {
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard label="Coupons distributed" value={distributed} />
-            <StatCard label="Coupons returned" value={returned} />
+            <StatCard label="Coupons returned (used)" value={returned} />
             <StatCard
               label="Return rate"
               value={distributed > 0 ? percent((returned / distributed) * 100) : "—"}

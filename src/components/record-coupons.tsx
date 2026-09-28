@@ -145,7 +145,7 @@ export function RecordCouponsDialog({
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="rc-qty">{isReturn ? "Coupons returned" : "Quantity distributed"}</Label>
+              <Label htmlFor="rc-qty">{isReturn ? "Used coupons returned" : "Quantity distributed"}</Label>
               <Input
                 id="rc-qty"
                 type="number"
