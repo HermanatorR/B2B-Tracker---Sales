@@ -102,7 +102,11 @@ export default function BusinessMap({
             key={b.id}
             position={[b.latitude as number, b.longitude as number]}
             icon={pinIcon(b.metrics.status)}
-            eventHandlers={{ mouseover: (e) => e.target.openPopup() }}
+            eventHandlers={{
+              mouseover: (e) => e.target.openPopup(),
+              // Leaflet toggles on click; after a hover-open that would close it, so keep it open.
+              click: (e) => setTimeout(() => e.target.openPopup(), 0),
+            }}
             title={`${b.name} — ${STATUS_META[b.metrics.status].label}`}
           >
             <Popup maxWidth={240} minWidth={180} autoPanPadding={[16, 16]}>
