@@ -473,6 +473,13 @@ export type Database = {
           total_returned: number
         }[]
       }
+      employee_last_activity: {
+        Args: never
+        Returns: {
+          last_activity: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -482,6 +489,16 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       my_company_id: { Args: never; Returns: string }
+      report_daily_totals: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          business_id: string
+          day: string
+          kind: string
+          quantity: number
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "sales_rep"
