@@ -89,7 +89,11 @@ export const createEmployee = createServerFn({ method: "POST" })
       company_id: profile.company_id,
       role: data.role,
     });
-    if (roleError) throw new Error("Employee created, but their role could not be set.");
+    if (roleError) {
+      await supabaseAdmin.from("profiles").delete().eq("id", newId);
+      await supabaseAdmin.auth.admin.deleteUser(newId);
+      throw new Error("Could not set this employee's role. Please try again.");
+    }
 
     return { id: newId };
   });
