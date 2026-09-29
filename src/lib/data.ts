@@ -293,16 +293,18 @@ export function useEmployees() {
         if (!lastMap.has(a.user_id as string)) lastMap.set(a.user_id as string, a.created_at as string);
       }
       // Group once instead of filtering every record for every employee.
-      const distBy = new Map<string, typeof dist>();
-      for (const d of dist ?? []) {
-        const k = d.user_id as string;
-        (distBy.get(k) ?? distBy.set(k, []).get(k)!)!.push(d);
-      }
-      const retBy = new Map<string, typeof rets>();
-      for (const r of rets ?? []) {
-        const k = r.user_id as string;
-        (retBy.get(k) ?? retBy.set(k, []).get(k)!)!.push(r);
-      }
+      type Rec = { user_id: string; quantity: number; business_id: string };
+      const group = (rows: Rec[] | null) => {
+        const m = new Map<string, Rec[]>();
+        for (const r of rows ?? []) {
+          const list = m.get(r.user_id);
+          if (list) list.push(r);
+          else m.set(r.user_id, [r]);
+        }
+        return m;
+      };
+      const distBy = group(dist as Rec[] | null);
+      const retBy = group(rets as Rec[] | null);
 
       return (profiles ?? []).map((p) => {
         const userDist = distBy.get(p.id as string) ?? [];
