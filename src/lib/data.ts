@@ -277,14 +277,13 @@ export function useEmployees() {
     queryKey: ["employees", session?.company?.id],
     enabled: Boolean(session?.company?.id),
     queryFn: async (): Promise<Employee[]> => {
-      const [{ data: profiles, error }, { data: roles }, { data: dist }, { data: rets }, { data: acts }, { data: businesses }] =
+      const [{ data: profiles, error }, { data: roles }, { data: dist }, { data: rets }, { data: acts }] =
         await Promise.all([
           supabase.from("profiles").select("*").order("full_name"),
           supabase.from("user_roles").select("user_id, role"),
           supabase.from("coupon_distributions").select("user_id, quantity, business_id"),
           supabase.from("coupon_returns").select("user_id, quantity, business_id"),
           supabase.from("activity_logs").select("user_id, created_at").order("created_at", { ascending: false }).limit(2000),
-          supabase.from("businesses").select("id, assigned_to"),
         ]);
       if (error) throw new Error(friendly(error, "Could not load employees."));
 
@@ -293,7 +292,6 @@ export function useEmployees() {
       for (const a of acts ?? []) {
         if (!lastMap.has(a.user_id as string)) lastMap.set(a.user_id as string, a.created_at as string);
       }
-      void businesses;
       // Group once instead of filtering every record for every employee.
       const distBy = new Map<string, typeof dist>();
       for (const d of dist ?? []) {
@@ -492,29 +490,29 @@ export function useSetEmployeeRole() {
 export function useRealtimeSync() {
   const qc = useQueryClient();
   useEffect(() => {
+    // Batch bursts of change events into one invalidation per query group.
+    const pending = new Set<string>();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const queue = (...keys: string[]) => {
+      keys.forEach((k) => pending.add(k));
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        const ks = [...pending];
+        pending.clear();
+        ks.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+      }, 400);
+    };
+    const couponKeys = ["businesses", "coupon-records", "company-records", "employees"];
     const channel = supabase
       .channel("coupon-tracker-sync")
-      .on("postgres_changes", { event: "*", schema: "public", table: "businesses" }, () => {
-        qc.invalidateQueries({ queryKey: ["businesses"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "coupon_distributions" }, () => {
-        qc.invalidateQueries({ queryKey: ["businesses"] });
-        qc.invalidateQueries({ queryKey: ["coupon-records"] });
-        qc.invalidateQueries({ queryKey: ["company-records"] });
-        qc.invalidateQueries({ queryKey: ["employees"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "coupon_returns" }, () => {
-        qc.invalidateQueries({ queryKey: ["businesses"] });
-        qc.invalidateQueries({ queryKey: ["coupon-records"] });
-        qc.invalidateQueries({ queryKey: ["company-records"] });
-        qc.invalidateQueries({ queryKey: ["employees"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
-        qc.invalidateQueries({ queryKey: ["activity"] });
-        qc.invalidateQueries({ queryKey: ["employees"] });
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "businesses" }, () => queue("businesses"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "coupon_distributions" }, () => queue(...couponKeys))
+      .on("postgres_changes", { event: "*", schema: "public", table: "coupon_returns" }, () => queue(...couponKeys))
+      .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => queue("activity", "employees"))
       .subscribe();
     return () => {
+      if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
   }, [qc]);
