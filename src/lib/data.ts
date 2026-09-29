@@ -259,6 +259,27 @@ export function useCompanyRecords() {
 
 
 
+/** Pre-aggregated daily totals (per business + employee) for a date range, computed in the database. */
+export function useReportTotals(from: string, to: string) {
+  const { data: session } = useSession();
+  return useQuery({
+    queryKey: ["company-records", session?.company?.id, "report", from, to],
+    enabled: Boolean(session?.company?.id) && Boolean(from) && Boolean(to),
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("report_daily_totals", { _from: from, _to: to });
+      if (error) throw new Error(friendly(error, "Could not load report."));
+      type Row = { business_id: string; user_id: string; quantity: number; date: string };
+      const distributions: Row[] = [];
+      const returns: Row[] = [];
+      for (const r of data ?? []) {
+        const row = { business_id: r.business_id as string, user_id: r.user_id as string, quantity: Number(r.quantity), date: r.day as string };
+        (r.kind === "distribution" ? distributions : returns).push(row);
+      }
+      return { distributions, returns };
+    },
+  });
+}
+
 /* --------------------------------- employees -------------------------------- */
 
 export type Employee = Profile & {
@@ -283,15 +304,13 @@ export function useEmployees() {
           supabase.from("user_roles").select("user_id, role"),
           supabase.from("coupon_distributions").select("user_id, quantity, business_id"),
           supabase.from("coupon_returns").select("user_id, quantity, business_id"),
-          supabase.from("activity_logs").select("user_id, created_at").order("created_at", { ascending: false }).limit(2000),
+          supabase.rpc("employee_last_activity"),
         ]);
       if (error) throw new Error(friendly(error, "Could not load employees."));
 
       const roleMap = new Map((roles ?? []).map((r) => [r.user_id as string, r.role as "admin" | "sales_rep"]));
       const lastMap = new Map<string, string>();
-      for (const a of acts ?? []) {
-        if (!lastMap.has(a.user_id as string)) lastMap.set(a.user_id as string, a.created_at as string);
-      }
+      for (const a of acts ?? []) lastMap.set(a.user_id as string, a.last_activity as string);
       // Group once instead of filtering every record for every employee.
       type Rec = { user_id: string; quantity: number; business_id: string };
       const group = (rows: Rec[] | null) => {

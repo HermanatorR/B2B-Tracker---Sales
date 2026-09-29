@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmptyState, PageHeader, SkeletonRows, StatCard } from "@/components/ui-bits";
 import { formatDate, percent } from "@/lib/coupon";
-import { useBusinesses, useCompanyRecords, useEmployees, useSession } from "@/lib/data";
+import { useBusinesses, useEmployees, useReportTotals, useSession } from "@/lib/data";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -39,7 +39,6 @@ function ReportsPage() {
   const { data: session, isPending: sessionPending } = useSession();
   const navigate = useNavigate();
   const { data: businesses } = useBusinesses();
-  const { data: records, isPending } = useCompanyRecords();
   const { data: employees } = useEmployees();
 
   const [range, setRange] = useState<Range>("30");
@@ -60,10 +59,9 @@ function ReportsPage() {
     return { from: iso(new Date(today.getTime() - (days - 1) * 86_400_000)), to: iso(today) };
   }, [range, from, to]);
 
-  const inRange = (date: string) => date >= bounds.from && date <= bounds.to;
-
-  const dist = (records?.distributions ?? []).filter((d) => inRange(d.date));
-  const rets = (records?.returns ?? []).filter((r) => inRange(r.date));
+  const { data: records, isPending } = useReportTotals(bounds.from, bounds.to);
+  const dist = useMemo(() => records?.distributions ?? [], [records]);
+  const rets = useMemo(() => records?.returns ?? [], [records]);
   const distributed = dist.reduce((s, d) => s + d.quantity, 0);
   const returned = rets.reduce((s, r) => s + r.quantity, 0);
 
