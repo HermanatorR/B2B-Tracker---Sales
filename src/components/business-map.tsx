@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 
-import { RecordCouponsDialog } from "@/components/record-coupons";
 import L from "leaflet";
 import { Crosshair } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
@@ -8,7 +7,7 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 
 import { Button } from "@/components/ui/button";
 import type { BusinessWithMetrics } from "@/lib/data";
-import { estimatedRemainingLabel, formatDate, STATUS_META, type CouponStatus } from "@/lib/coupon";
+import { percent, STATUS_META, type CouponStatus } from "@/lib/coupon";
 
 const STATUS_HEX: Record<CouponStatus, string> = {
   healthy: "#2f9e5e",
@@ -18,15 +17,20 @@ const STATUS_HEX: Record<CouponStatus, string> = {
   never: "#8d8a83",
 };
 
+const iconCache = new Map<CouponStatus, L.DivIcon>();
 function pinIcon(status: CouponStatus) {
+  const cached = iconCache.get(status);
+  if (cached) return cached;
   const color = STATUS_HEX[status];
-  return L.divIcon({
+  const icon = L.divIcon({
     className: "coupon-pin",
     html: `<span style="display:block;width:20px;height:20px;border-radius:9999px;background:${color};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)"></span>`,
     iconSize: [20, 20],
     iconAnchor: [10, 10],
     popupAnchor: [0, -10],
   });
+  iconCache.set(status, icon);
+  return icon;
 }
 
 function LocateButton() {
@@ -98,55 +102,27 @@ export default function BusinessMap({
             key={b.id}
             position={[b.latitude as number, b.longitude as number]}
             icon={pinIcon(b.metrics.status)}
+            eventHandlers={{ mouseover: (e) => e.target.openPopup() }}
             title={`${b.name} — ${STATUS_META[b.metrics.status].label}`}
           >
-            <Popup>
-              <div className="min-w-52 space-y-1.5">
-                <p className="text-sm font-semibold">{b.name}</p>
+            <Popup maxWidth={240} minWidth={180} autoPanPadding={[16, 16]}>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold leading-tight">{b.name}</p>
                 <p className="text-xs text-muted-foreground">{b.address}</p>
-                {b.contact_name ? (
-                  <p className="text-xs">
-                    {b.contact_name}
-                    {b.contact_phone ? ` · ${b.contact_phone}` : ""}
-                  </p>
-                ) : null}
+                <p className="pt-1 text-xs">
+                  Coupons handed out: <strong>{b.metrics.totalDistributed}</strong>
+                </p>
                 <p className="text-xs">
-                  Status: <strong>{STATUS_META[b.metrics.status].label}</strong>
+                  Turnover:{" "}
+                  <strong>{b.metrics.hasEnoughData ? percent(b.metrics.percentUsed) : "Not enough data"}</strong>
                 </p>
-                <p className="text-xs">{b.metrics.turnoverLabel}</p>
-                <p className="text-xs">{estimatedRemainingLabel(b.metrics)}</p>
-                <p className="text-xs text-muted-foreground">
-                  Last distribution: {formatDate(b.metrics.lastDistribution)}
-                  <br />
-                  Last return: {formatDate(b.metrics.lastReturn)}
-                </p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  <Link
-                    to="/businesses/$businessId"
-                    params={{ businessId: b.id }}
-                    className="inline-flex rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground"
-                  >
-                    View business
-                  </Link>
-                  <RecordCouponsDialog
-                    mode="distribution"
-                    business={b}
-                    trigger={
-                      <button type="button" className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium">
-                        Record distribution
-                      </button>
-                    }
-                  />
-                  <RecordCouponsDialog
-                    mode="return"
-                    business={b}
-                    trigger={
-                      <button type="button" className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium">
-                        Record return
-                      </button>
-                    }
-                  />
-                </div>
+                <Link
+                  to="/businesses/$businessId"
+                  params={{ businessId: b.id }}
+                  className="inline-block pt-1 text-xs font-semibold text-foreground underline-offset-2 hover:underline"
+                >
+                  More →
+                </Link>
               </div>
             </Popup>
           </Marker>

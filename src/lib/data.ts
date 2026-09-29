@@ -97,10 +97,12 @@ export type SessionInfo = {
 export function useSession() {
   return useQuery({
     queryKey: ["session"],
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
     queryFn: async (): Promise<SessionInfo | null> => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
+      // Local session read (no network hop). The route gate already verified the
+      // user with the server, and every query below is enforced by RLS.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
       if (!user) return null;
 
       const [{ data: profile }, { data: roles }] = await Promise.all([
@@ -146,7 +148,7 @@ export function useBusinesses() {
   const { data: session } = useSession();
   const settings = session?.settings ?? DEFAULT_THRESHOLDS;
   return useQuery({
-    queryKey: ["businesses", session?.company?.id],
+    queryKey: ["businesses", session?.company?.id, settings],
     enabled: Boolean(session?.company?.id),
     queryFn: async (): Promise<BusinessWithMetrics[]> => {
       const [{ data: businesses, error }, { data: stats }, { data: profiles }] = await Promise.all([
@@ -275,14 +277,13 @@ export function useEmployees() {
     queryKey: ["employees", session?.company?.id],
     enabled: Boolean(session?.company?.id),
     queryFn: async (): Promise<Employee[]> => {
-      const [{ data: profiles, error }, { data: roles }, { data: dist }, { data: rets }, { data: acts }, { data: businesses }] =
+      const [{ data: profiles, error }, { data: roles }, { data: dist }, { data: rets }, { data: acts }] =
         await Promise.all([
           supabase.from("profiles").select("*").order("full_name"),
           supabase.from("user_roles").select("user_id, role"),
           supabase.from("coupon_distributions").select("user_id, quantity, business_id"),
           supabase.from("coupon_returns").select("user_id, quantity, business_id"),
-          supabase.from("activity_logs").select("user_id, created_at").order("created_at", { ascending: false }),
-          supabase.from("businesses").select("id, assigned_to"),
+          supabase.from("activity_logs").select("user_id, created_at").order("created_at", { ascending: false }).limit(2000),
         ]);
       if (error) throw new Error(friendly(error, "Could not load employees."));
 
@@ -291,11 +292,24 @@ export function useEmployees() {
       for (const a of acts ?? []) {
         if (!lastMap.has(a.user_id as string)) lastMap.set(a.user_id as string, a.created_at as string);
       }
+      // Group once instead of filtering every record for every employee.
+      type Rec = { user_id: string; quantity: number; business_id: string };
+      const group = (rows: Rec[] | null) => {
+        const m = new Map<string, Rec[]>();
+        for (const r of rows ?? []) {
+          const list = m.get(r.user_id);
+          if (list) list.push(r);
+          else m.set(r.user_id, [r]);
+        }
+        return m;
+      };
+      const distBy = group(dist as Rec[] | null);
+      const retBy = group(rets as Rec[] | null);
 
       return (profiles ?? []).map((p) => {
-        const userDist = (dist ?? []).filter((d) => d.user_id === p.id);
+        const userDist = distBy.get(p.id as string) ?? [];
         const distributed = userDist.reduce((s, d) => s + (d.quantity as number), 0);
-        const userRets = (rets ?? []).filter((r) => r.user_id === p.id);
+        const userRets = retBy.get(p.id as string) ?? [];
         const returned = userRets.reduce((s, r) => s + (r.quantity as number), 0);
         const visited = new Set([
           ...userDist.map((d) => d.business_id as string),
@@ -478,29 +492,29 @@ export function useSetEmployeeRole() {
 export function useRealtimeSync() {
   const qc = useQueryClient();
   useEffect(() => {
+    // Batch bursts of change events into one invalidation per query group.
+    const pending = new Set<string>();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const queue = (...keys: string[]) => {
+      keys.forEach((k) => pending.add(k));
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        const ks = [...pending];
+        pending.clear();
+        ks.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+      }, 400);
+    };
+    const couponKeys = ["businesses", "coupon-records", "company-records", "employees"];
     const channel = supabase
       .channel("coupon-tracker-sync")
-      .on("postgres_changes", { event: "*", schema: "public", table: "businesses" }, () => {
-        qc.invalidateQueries({ queryKey: ["businesses"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "coupon_distributions" }, () => {
-        qc.invalidateQueries({ queryKey: ["businesses"] });
-        qc.invalidateQueries({ queryKey: ["coupon-records"] });
-        qc.invalidateQueries({ queryKey: ["company-records"] });
-        qc.invalidateQueries({ queryKey: ["employees"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "coupon_returns" }, () => {
-        qc.invalidateQueries({ queryKey: ["businesses"] });
-        qc.invalidateQueries({ queryKey: ["coupon-records"] });
-        qc.invalidateQueries({ queryKey: ["company-records"] });
-        qc.invalidateQueries({ queryKey: ["employees"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
-        qc.invalidateQueries({ queryKey: ["activity"] });
-        qc.invalidateQueries({ queryKey: ["employees"] });
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "businesses" }, () => queue("businesses"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "coupon_distributions" }, () => queue(...couponKeys))
+      .on("postgres_changes", { event: "*", schema: "public", table: "coupon_returns" }, () => queue(...couponKeys))
+      .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => queue("activity", "employees"))
       .subscribe();
     return () => {
+      if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
   }, [qc]);
