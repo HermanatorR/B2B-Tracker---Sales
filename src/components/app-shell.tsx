@@ -6,6 +6,7 @@ import {
   Building2,
   LayoutDashboard,
   LogOut,
+  Mail,
   Map as MapIcon,
   Menu,
   Settings,
@@ -28,6 +29,7 @@ const REP_NAV: NavItem[] = [
   { to: "/home", label: "Home", icon: LayoutDashboard },
   { to: "/map", label: "Map", icon: MapIcon },
   { to: "/businesses", label: "Businesses", icon: Building2 },
+  { to: "/prepare", label: "Prepare", icon: Mail },
   { to: "/activity", label: "My Activity", icon: Activity },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
