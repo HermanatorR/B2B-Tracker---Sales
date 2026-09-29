@@ -506,6 +506,97 @@ export function useSetEmployeeRole() {
   });
 }
 
+/* --------------------------------- envelopes -------------------------------- */
+
+export type Envelope = {
+  id: string;
+  business_id: string;
+  prepared_by: string;
+  quantity_prepared: number;
+  quantity_distributed: number | null;
+  status: "prepared" | "distributed" | "cancelled";
+  prepared_at: string;
+  distributed_at: string | null;
+  cancelled_at: string | null;
+};
+
+/** Open envelopes plus anything distributed/cancelled in the last 7 days. RLS limits reps to their own. */
+export function useEnvelopes() {
+  const { data: session } = useSession();
+  return useQuery({
+    queryKey: ["envelopes", session?.company?.id],
+    enabled: Boolean(session?.company?.id),
+    queryFn: async (): Promise<Envelope[]> => {
+      const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+      const { data, error } = await supabase
+        .from("coupon_envelopes")
+        .select("id, business_id, prepared_by, quantity_prepared, quantity_distributed, status, prepared_at, distributed_at, cancelled_at")
+        .or(`status.eq.prepared,updated_at.gte.${since}`)
+        .order("prepared_at", { ascending: false })
+        .limit(300);
+      if (error) throw new Error(friendly(error, "Could not load envelopes."));
+      return (data ?? []) as Envelope[];
+    },
+  });
+}
+
+export function usePrepareEnvelopes() {
+  const { data: session } = useSession();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { business_id: string; quantity: number }[]) => {
+      if (!session?.company?.id) throw new Error("No company found for your account.");
+      const { error } = await supabase.from("coupon_envelopes").insert(
+        items.map((i) => ({
+          business_id: i.business_id,
+          quantity_prepared: i.quantity,
+          company_id: session.company!.id,
+          prepared_by: session.userId,
+        })),
+      );
+      if (error) throw new Error(friendly(error, "Could not save these envelopes."));
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["envelopes"] }),
+  });
+}
+
+export function useDistributeEnvelope() {
+  const invalidate = useInvalidateAll();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
+      const { error } = await supabase.rpc("distribute_envelope", { _envelope_id: id, _quantity: quantity });
+      if (error) throw new Error(friendly(error, "Could not record this distribution."));
+    },
+    onSettled: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ["envelopes"] });
+    },
+  });
+}
+
+export function useCancelEnvelope() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("cancel_envelope", { _envelope_id: id });
+      if (error) throw new Error(friendly(error, "Could not cancel this envelope."));
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["envelopes"] }),
+  });
+}
+
+export function useUpdateEnvelopeQuantity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
+      const { error } = await supabase.rpc("update_envelope_quantity", { _envelope_id: id, _quantity: quantity });
+      if (error) throw new Error(friendly(error, "Could not change this envelope."));
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["envelopes"] }),
+  });
+}
+
 /* --------------------------------- realtime --------------------------------- */
 
 export function useRealtimeSync() {
@@ -531,6 +622,7 @@ export function useRealtimeSync() {
       .on("postgres_changes", { event: "*", schema: "public", table: "coupon_distributions" }, () => queue(...couponKeys))
       .on("postgres_changes", { event: "*", schema: "public", table: "coupon_returns" }, () => queue(...couponKeys))
       .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => queue("activity", "employees"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "coupon_envelopes" }, () => queue("envelopes"))
       .subscribe();
     return () => {
       if (timer) clearTimeout(timer);

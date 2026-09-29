@@ -114,6 +114,11 @@ function BusinessProfile() {
               </Button>
             }
           />
+          <Button asChild variant="outline" className="col-span-2 h-12 w-full gap-2 text-base">
+            <Link to="/prepare" search={{ business: business.id }}>
+              <Mail className="size-5" aria-hidden="true" /> Prepare envelope
+            </Link>
+          </Button>
         </div>
       </div>
 

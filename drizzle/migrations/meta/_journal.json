@@ -50,6 +50,13 @@
       "when": 1790646681861,
       "tag": "0006_report_aggregates",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790648572815,
+      "tag": "0007_coupon_envelopes",
+      "breakpoints": true
     }
   ]
 }

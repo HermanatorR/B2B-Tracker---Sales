@@ -16,6 +16,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
+import { Route as AuthenticatedPrepareRouteImport } from './routes/_authenticated/prepare'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -56,6 +57,11 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
 const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
   id: '/map',
   path: '/map',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPrepareRoute = AuthenticatedPrepareRouteImport.update({
+  id: '/prepare',
+  path: '/prepare',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/activity': typeof AuthenticatedActivityRoute
   '/home': typeof AuthenticatedHomeRoute
   '/map': typeof AuthenticatedMapRoute
+  '/prepare': typeof AuthenticatedPrepareRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/activity': typeof AuthenticatedActivityRoute
   '/home': typeof AuthenticatedHomeRoute
   '/map': typeof AuthenticatedMapRoute
+  '/prepare': typeof AuthenticatedPrepareRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
+  '/_authenticated/prepare': typeof AuthenticatedPrepareRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/home'
     | '/map'
+    | '/prepare'
     | '/profile'
     | '/reports'
     | '/settings'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/home'
     | '/map'
+    | '/prepare'
     | '/profile'
     | '/reports'
     | '/settings'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/_authenticated/activity'
     | '/_authenticated/home'
     | '/_authenticated/map'
+    | '/_authenticated/prepare'
     | '/_authenticated/profile'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
@@ -252,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMapRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/prepare': {
+      id: '/_authenticated/prepare'
+      path: '/prepare'
+      fullPath: '/prepare'
+      preLoaderRoute: typeof AuthenticatedPrepareRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -308,6 +327,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
+  AuthenticatedPrepareRoute: typeof AuthenticatedPrepareRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -321,6 +341,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
+  AuthenticatedPrepareRoute: AuthenticatedPrepareRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
