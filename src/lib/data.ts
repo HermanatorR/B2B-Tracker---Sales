@@ -97,10 +97,12 @@ export type SessionInfo = {
 export function useSession() {
   return useQuery({
     queryKey: ["session"],
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
     queryFn: async (): Promise<SessionInfo | null> => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
+      // Local session read (no network hop). The route gate already verified the
+      // user with the server, and every query below is enforced by RLS.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
       if (!user) return null;
 
       const [{ data: profile }, { data: roles }] = await Promise.all([
@@ -146,7 +148,7 @@ export function useBusinesses() {
   const { data: session } = useSession();
   const settings = session?.settings ?? DEFAULT_THRESHOLDS;
   return useQuery({
-    queryKey: ["businesses", session?.company?.id],
+    queryKey: ["businesses", session?.company?.id, settings],
     enabled: Boolean(session?.company?.id),
     queryFn: async (): Promise<BusinessWithMetrics[]> => {
       const [{ data: businesses, error }, { data: stats }, { data: profiles }] = await Promise.all([
@@ -281,7 +283,7 @@ export function useEmployees() {
           supabase.from("user_roles").select("user_id, role"),
           supabase.from("coupon_distributions").select("user_id, quantity, business_id"),
           supabase.from("coupon_returns").select("user_id, quantity, business_id"),
-          supabase.from("activity_logs").select("user_id, created_at").order("created_at", { ascending: false }),
+          supabase.from("activity_logs").select("user_id, created_at").order("created_at", { ascending: false }).limit(2000),
           supabase.from("businesses").select("id, assigned_to"),
         ]);
       if (error) throw new Error(friendly(error, "Could not load employees."));
@@ -291,11 +293,23 @@ export function useEmployees() {
       for (const a of acts ?? []) {
         if (!lastMap.has(a.user_id as string)) lastMap.set(a.user_id as string, a.created_at as string);
       }
+      void businesses;
+      // Group once instead of filtering every record for every employee.
+      const distBy = new Map<string, typeof dist>();
+      for (const d of dist ?? []) {
+        const k = d.user_id as string;
+        (distBy.get(k) ?? distBy.set(k, []).get(k)!)!.push(d);
+      }
+      const retBy = new Map<string, typeof rets>();
+      for (const r of rets ?? []) {
+        const k = r.user_id as string;
+        (retBy.get(k) ?? retBy.set(k, []).get(k)!)!.push(r);
+      }
 
       return (profiles ?? []).map((p) => {
-        const userDist = (dist ?? []).filter((d) => d.user_id === p.id);
+        const userDist = distBy.get(p.id as string) ?? [];
         const distributed = userDist.reduce((s, d) => s + (d.quantity as number), 0);
-        const userRets = (rets ?? []).filter((r) => r.user_id === p.id);
+        const userRets = retBy.get(p.id as string) ?? [];
         const returned = userRets.reduce((s, r) => s + (r.quantity as number), 0);
         const visited = new Set([
           ...userDist.map((d) => d.business_id as string),
