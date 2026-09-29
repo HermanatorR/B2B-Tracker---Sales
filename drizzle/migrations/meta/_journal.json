@@ -36,6 +36,13 @@
       "when": 1790570466286,
       "tag": "0004_fix_profile_guard_role_check",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790643979705,
+      "tag": "0005_block_inactive_users",
+      "breakpoints": true
     }
   ]
 }
