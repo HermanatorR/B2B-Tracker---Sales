@@ -38,6 +38,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/home", label: "Dashboard", icon: LayoutDashboard },
   { to: "/map", label: "Map", icon: MapIcon },
   { to: "/businesses", label: "Businesses", icon: Building2 },
+  { to: "/prepare", label: "Envelopes", icon: Mail },
   { to: "/employees", label: "Employees", icon: Users },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/settings", label: "Settings", icon: Settings },
