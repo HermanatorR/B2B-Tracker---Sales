@@ -283,6 +283,90 @@ export type Database = {
           },
         ]
       }
+      coupon_envelopes: {
+        Row: {
+          business_id: string
+          cancelled_at: string | null
+          company_id: string
+          created_at: string
+          distributed_at: string | null
+          distribution_id: string | null
+          id: string
+          prepared_at: string
+          prepared_by: string
+          quantity_distributed: number | null
+          quantity_prepared: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          cancelled_at?: string | null
+          company_id: string
+          created_at?: string
+          distributed_at?: string | null
+          distribution_id?: string | null
+          id?: string
+          prepared_at?: string
+          prepared_by: string
+          quantity_distributed?: number | null
+          quantity_prepared: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          cancelled_at?: string | null
+          company_id?: string
+          created_at?: string
+          distributed_at?: string | null
+          distribution_id?: string | null
+          id?: string
+          prepared_at?: string
+          prepared_by?: string
+          quantity_distributed?: number | null
+          quantity_prepared?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_envelopes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_stats"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "coupon_envelopes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_envelopes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_envelopes_distribution_id_fkey"
+            columns: ["distribution_id"]
+            isOneToOne: true
+            referencedRelation: "coupon_distributions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_envelopes_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_returns: {
         Row: {
           business_id: string
@@ -460,6 +544,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      cancel_envelope: { Args: { _envelope_id: string }; Returns: undefined }
       company_business_stats: {
         Args: never
         Returns: {
@@ -472,6 +557,10 @@ export type Database = {
           total_distributed: number
           total_returned: number
         }[]
+      }
+      distribute_envelope: {
+        Args: { _envelope_id: string; _note?: string; _quantity: number }
+        Returns: string
       }
       employee_last_activity: {
         Args: never
@@ -498,6 +587,10 @@ export type Database = {
           quantity: number
           user_id: string
         }[]
+      }
+      update_envelope_quantity: {
+        Args: { _envelope_id: string; _quantity: number }
+        Returns: undefined
       }
     }
     Enums: {
