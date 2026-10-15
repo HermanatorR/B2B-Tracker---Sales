@@ -125,7 +125,7 @@ export function RecordCouponsDialog({
     >
       <span onClick={() => setOpen(true)}>{trigger}</span>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit}>
+        <form onSubmit={submit} noValidate>
           <DialogHeader>
             <DialogTitle>{isReturn ? "Record returns" : "Record distribution"}</DialogTitle>
             <DialogDescription>
