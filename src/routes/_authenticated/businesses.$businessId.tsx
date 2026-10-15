@@ -95,7 +95,7 @@ function BusinessProfile() {
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <RecordCouponsDialog
             mode="distribution"
             business={business}
@@ -114,7 +114,7 @@ function BusinessProfile() {
               </Button>
             }
           />
-          <Button asChild variant="outline" className="col-span-2 h-12 w-full gap-2 text-base">
+          <Button asChild variant="outline" className="h-12 w-full gap-2 text-base sm:col-span-2">
             <Link to="/prepare" search={{ business: business.id }}>
               <Mail className="size-5" aria-hidden="true" /> Prepare envelope
             </Link>
