@@ -57,6 +57,13 @@
       "when": 1790648572815,
       "tag": "0007_coupon_envelopes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792039792295,
+      "tag": "0008_coupon_returns_idempotency",
+      "breakpoints": true
     }
   ]
 }
