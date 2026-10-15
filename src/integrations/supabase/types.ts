@@ -370,6 +370,7 @@ export type Database = {
       coupon_returns: {
         Row: {
           business_id: string
+          client_request_id: string | null
           company_id: string
           created_at: string
           id: string
@@ -380,6 +381,7 @@ export type Database = {
         }
         Insert: {
           business_id: string
+          client_request_id?: string | null
           company_id: string
           created_at?: string
           id?: string
@@ -390,6 +392,7 @@ export type Database = {
         }
         Update: {
           business_id?: string
+          client_request_id?: string | null
           company_id?: string
           created_at?: string
           id?: string

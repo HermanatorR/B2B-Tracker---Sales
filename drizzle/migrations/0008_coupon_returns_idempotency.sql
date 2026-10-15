@@ -1,0 +1,3 @@
+ALTER TABLE public.coupon_returns ADD COLUMN IF NOT EXISTS client_request_id uuid;
+CREATE UNIQUE INDEX IF NOT EXISTS coupon_returns_client_request_id_key ON public.coupon_returns (client_request_id) WHERE client_request_id IS NOT NULL;
+COMMENT ON COLUMN public.coupon_returns.client_request_id IS 'Idempotency key generated once per Record Returns form; a repeated submit with the same key is rejected as a duplicate.';

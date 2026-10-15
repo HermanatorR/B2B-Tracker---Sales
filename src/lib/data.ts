@@ -433,14 +433,23 @@ export function useRecordReturn() {
   const { data: session } = useSession();
   const invalidate = useInvalidateAll();
   return useMutation({
-    mutationFn: async (input: { business_id: string; quantity: number; returned_on: string; note?: string | undefined }) => {
+    mutationFn: async (input: {
+      business_id: string;
+      quantity: number;
+      returned_on: string;
+      note?: string | undefined;
+      client_request_id?: string | undefined;
+    }) => {
       if (!session?.company?.id) throw new Error("No company found for your account.");
       const { error } = await supabase.from("coupon_returns").insert({
         ...input,
         note: input.note ?? null,
+        client_request_id: input.client_request_id ?? null,
         company_id: session.company.id,
         user_id: session.userId,
       });
+      // Same form submitted twice (double tap / retry): the first one was saved, treat as success.
+      if (error && error.code === "23505" && input.client_request_id) return;
       if (error) throw new Error(friendly(error, "Could not record these returns."));
     },
     onSuccess: invalidate,

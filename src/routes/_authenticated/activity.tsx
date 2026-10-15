@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Activity as ActivityIcon } from "lucide-react";
+import { Activity as ActivityIcon, Undo2 } from "lucide-react";
+
+import { RecordCouponsDialog } from "@/components/record-coupons";
+import { Button } from "@/components/ui/button";
 
 import { EmptyState, PageHeader, SkeletonRows } from "@/components/ui-bits";
 import { activityLabel, formatDateTime } from "@/lib/coupon";
@@ -27,7 +30,20 @@ function ActivityPage() {
 
   return (
     <div>
-      <PageHeader title="My activity" subtitle="Your recent coupon records and businesses added." />
+      <PageHeader
+        title="My activity"
+        subtitle="Your recent coupon records and businesses added."
+        actions={
+          <RecordCouponsDialog
+            mode="return"
+            trigger={
+              <Button variant="secondary" className="gap-1.5">
+                <Undo2 className="size-4" aria-hidden="true" /> Record returns
+              </Button>
+            }
+          />
+        }
+      />
       {isPending ? (
         <SkeletonRows count={5} />
       ) : !activity || activity.length === 0 ? (

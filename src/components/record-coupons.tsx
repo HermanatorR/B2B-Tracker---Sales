@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,14 @@ import {
 } from "@/components/ui/select";
 import { useBusinesses, useRecordDistribution, useRecordReturn, type BusinessWithMetrics } from "@/lib/data";
 
+// Local calendar date (not UTC), so evening entries aren't dated tomorrow.
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function newRequestId() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : undefined;
 }
 
 export function RecordCouponsDialog({
@@ -41,6 +47,8 @@ export function RecordCouponsDialog({
   const [date, setDate] = useState(today());
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const requestId = useRef<string | undefined>(undefined);
+  const submitting = useRef(false);
 
   const { data: businesses } = useBusinesses();
   const distribute = useRecordDistribution();
@@ -55,11 +63,13 @@ export function RecordCouponsDialog({
     setNote("");
     setDate(today());
     setError(null);
+    requestId.current = undefined;
     if (!business) setBusinessId("");
   }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (submitting.current) return;
     setError(null);
     const qty = Number(quantity);
     const targetId = business?.id ?? businessId;
@@ -70,23 +80,23 @@ export function RecordCouponsDialog({
     if (new Date(date) > new Date(today())) return setError("The date cannot be in the future.");
 
     if (isReturn && selected) {
-      const wouldBe = selected.metrics.totalReturned + qty;
-      if (wouldBe > selected.metrics.totalDistributed) {
-        return setError(
-          `Only ${selected.metrics.totalDistributed - selected.metrics.totalReturned} coupons are still out at ${selected.name}. Check the quantity before saving.`,
-        );
-      }
+      const out = selected.metrics.totalDistributed - selected.metrics.totalReturned;
+      if (out <= 0) return setError(`${selected.name} has no coupons out right now, so there is nothing to return.`);
+      if (qty > out) return setError(`Only ${out} coupons are still out at ${selected.name}. Enter ${out} or fewer.`);
     }
 
+    submitting.current = true;
     try {
       if (isReturn) {
+        requestId.current ??= newRequestId();
         await recordReturn.mutateAsync({
           business_id: targetId,
           quantity: qty,
           returned_on: date,
           note: note || undefined,
+          client_request_id: requestId.current,
         });
-        toast.success(`Recorded ${qty} returned coupons`);
+        toast.success(`Recorded ${qty} used / returned coupons for ${selected?.name ?? "the business"}`);
       } else {
         await distribute.mutateAsync({
           business_id: targetId,
@@ -100,6 +110,8 @@ export function RecordCouponsDialog({
       reset();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      submitting.current = false;
     }
   }
 
@@ -113,12 +125,12 @@ export function RecordCouponsDialog({
     >
       <span onClick={() => setOpen(true)}>{trigger}</span>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit}>
+        <form onSubmit={submit} noValidate>
           <DialogHeader>
             <DialogTitle>{isReturn ? "Record returns" : "Record distribution"}</DialogTitle>
             <DialogDescription>
               {isReturn
-                ? "Enter how many coupons came back from the business."
+                ? "Enter how many coupons the business used and you collected back."
                 : "Enter how many coupons you left with the business."}
             </DialogDescription>
           </DialogHeader>
@@ -144,8 +156,27 @@ export function RecordCouponsDialog({
               <p className="rounded-lg bg-muted px-3 py-2 text-sm font-medium">{business.name}</p>
             )}
 
+            {isReturn && selected ? (
+              <dl className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-lg border border-border p-2">
+                  <dt className="text-xs text-muted-foreground">Distributed</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{selected.metrics.totalDistributed}</dd>
+                </div>
+                <div className="rounded-lg border border-border p-2">
+                  <dt className="text-xs text-muted-foreground">Used so far</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{selected.metrics.totalReturned}</dd>
+                </div>
+                <div className="rounded-lg border border-border p-2">
+                  <dt className="text-xs text-muted-foreground">Still out</dt>
+                  <dd className="text-lg font-semibold tabular-nums">
+                    {Math.max(0, selected.metrics.totalDistributed - selected.metrics.totalReturned)}
+                  </dd>
+                </div>
+              </dl>
+            ) : null}
+
             <div className="space-y-1.5">
-              <Label htmlFor="rc-qty">{isReturn ? "Used coupons returned" : "Quantity distributed"}</Label>
+              <Label htmlFor="rc-qty">{isReturn ? "Used / Returned Coupons" : "Quantity distributed"}</Label>
               <Input
                 id="rc-qty"
                 type="number"
@@ -155,9 +186,15 @@ export function RecordCouponsDialog({
                 autoFocus
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                placeholder="100"
-                className="h-12 text-lg"
+                placeholder={isReturn ? "25" : "100"}
+                {...(isReturn && selected ? { max: Math.max(0, selected.metrics.totalDistributed - selected.metrics.totalReturned) } : {})}
+                className="h-14 text-center text-2xl tabular-nums"
               />
+              {isReturn && selected ? (
+                <p className="text-xs text-muted-foreground">
+                  Maximum {Math.max(0, selected.metrics.totalDistributed - selected.metrics.totalReturned)} (coupons still out).
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-1.5">
@@ -178,8 +215,8 @@ export function RecordCouponsDialog({
           </div>
 
           <DialogFooter>
-            <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-              {pending ? "Saving…" : "Save"}
+            <Button type="submit" disabled={pending} className="h-12 w-full text-base">
+              {pending ? "Saving…" : isReturn ? "Confirm returns" : "Save"}
             </Button>
           </DialogFooter>
         </form>

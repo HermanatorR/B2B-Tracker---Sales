@@ -57,6 +57,20 @@
       "when": 1790648572815,
       "tag": "0007_coupon_envelopes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792039792295,
+      "tag": "0008_coupon_returns_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792040000880,
+      "tag": "0009_guard_coupon_record_caller_check",
+      "breakpoints": true
     }
   ]
 }

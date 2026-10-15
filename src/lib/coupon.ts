@@ -155,7 +155,7 @@ export function formatDateTime(value: string | null | undefined): string {
 
 export function percent(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return `${Math.round(value)}%`;
+  return `${Math.round(value * 10) / 10}%`;
 }
 
 export function estimatedRemainingLabel(m: BusinessMetrics): string {

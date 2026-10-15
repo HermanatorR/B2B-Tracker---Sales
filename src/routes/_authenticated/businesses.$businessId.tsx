@@ -95,7 +95,7 @@ function BusinessProfile() {
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <RecordCouponsDialog
             mode="distribution"
             business={business}
@@ -114,7 +114,7 @@ function BusinessProfile() {
               </Button>
             }
           />
-          <Button asChild variant="outline" className="col-span-2 h-12 w-full gap-2 text-base">
+          <Button asChild variant="outline" className="h-12 w-full gap-2 text-base sm:col-span-2">
             <Link to="/prepare" search={{ business: business.id }}>
               <Mail className="size-5" aria-hidden="true" /> Prepare envelope
             </Link>
@@ -122,11 +122,12 @@ function BusinessProfile() {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Total distributed" value={m.totalDistributed} />
-        <StatCard label="Returned (used)" value={m.totalReturned} hint="Used coupons collected back" />
-        <StatCard label="Return rate" value={percent(m.returnRate)} />
-        <StatCard label="Turnover" value={m.turnoverLabel.split(" — ")[1] ?? "—"} hint={m.turnoverLabel} />
+      <h2 className="mb-2 mt-5 text-sm font-medium text-muted-foreground">Coupon status</h2>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Distributed" value={m.totalDistributed} />
+        <StatCard label="Used / Returned" value={m.totalReturned} hint="Used coupons collected back" />
+        <StatCard label="Turnover" value={percent(m.returnRate)} hint="Used ÷ distributed" />
+        <StatCard label="Remaining" value={Math.max(0, m.remaining)} hint="Still out at the business" />
       </div>
 
       <Tabs defaultValue="overview" className="mt-6">
